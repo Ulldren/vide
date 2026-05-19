@@ -78,9 +78,13 @@ return {
         BackgroundColor3 = Color3.new(1, 1, 1),
         BorderColor3 = Color3.new(0, 0, 0),
         BorderSizePixel = 0,
-        Font = Enum.Font.SourceSans,
+
+        BackgroundTransparency = 1,
+        Font = Enum.Font.FredokaOne,
         Text = "",
-        TextColor3 = Color3.new(0, 0, 0)
+        TextScaled = true,
+        TextColor3 = Color3.new(1, 1, 1),
+        TextXAlignment = Enum.TextXAlignment.Left,
     },
     
     UIListLayout = {
