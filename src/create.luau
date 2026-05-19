@@ -53,55 +53,66 @@ local function create(class_or_instance: string|Instance, properties: { [unknown
 end
 
 type Instances = {
-    Folder: Folder,
-    BillboardGui: BillboardGui,
-    CanvasGroup: CanvasGroup,
-    Frame: Frame,
-    ImageButton: ImageButton,
-    ImageLabel: ImageLabel,
-    ScreenGui: ScreenGui,
-    ScrollingFrame: ScrollingFrame,
-    SurfaceGui: SurfaceGui,
-    TextBox: TextBox,
-    TextButton: TextButton,
-    TextLabel: TextLabel,
-    UIAspectRatioConstraint: UIAspectRatioConstraint,
-    UICorner: UICorner,
-    UIGradient: UIGradient,
-    UIGridLayout: UIGridLayout,
-    UIListLayout: UIListLayout,
-    Camera: Camera,
-    WorldModel: WorldModel,
+	Folder: Folder,
+	BillboardGui: BillboardGui,
+	CanvasGroup: CanvasGroup,
+	Frame: Frame,
+	ImageButton: ImageButton,
+	ImageLabel: ImageLabel,
+	ScreenGui: ScreenGui,
+	ScrollingFrame: ScrollingFrame,
+	SurfaceGui: SurfaceGui,
+	TextBox: TextBox,
+	TextButton: TextButton,
+	TextLabel: TextLabel,
+	UIAspectRatioConstraint: UIAspectRatioConstraint,
+	UICorner: UICorner,
+	UIGradient: UIGradient,
+	UIGridLayout: UIGridLayout,
+	UIListLayout: UIListLayout,
 }
 
+type AnyInstance = Instance
+
+type AnyProps = { [any]: any }
+
 type function Properties(instance: type?)
-    local properties = types.newtable()
+	local properties = types.newtable()
 
-    while instance do
-        for i, v in instance:properties() do
-            local connector = v.read and v.read.tag == "table" and v.read:readproperty(types.singleton("Connect"))
-            if connector then
-                local params = connector:parameters().head
-                if not params then continue end
-                local listener = params[2]
-                if not listener then continue end
-                properties:setproperty(i, types.optional(listener))
-            elseif v.write then
-                properties:setproperty(i, types.optional(types.unionof(
-                    v.write,
-                    types.newfunction({}, { head = { v.write } })
-                )))
-            end
-        end
+	while instance do
+		for i, v in instance:properties() do
+			local connector = v.read and v.read.tag == "table" and v.read:readproperty(types.singleton("Connect"))
+			if connector then
+				local params = connector:parameters().head
+				local listener = params and params[2]
+				if listener then
+					properties:setproperty(i, types.optional(listener))
+				end
+			elseif v.write then
+				properties:setproperty(
+					i,
+					types.optional(types.unionof(v.write, types.newfunction({}, { head = { v.write } })))
+				)
+			end
+		end
 
-        instance = instance:readparent()
-    end
+		instance = instance:readparent()
+	end
 
-    properties:setindexer(types.number, types.any)
+	properties:setindexer(types.number, types.any)
 
-    return properties
+	return properties
 end
 
-type Create = <Name>(Name|keyof<Instances>|"") -> (Properties<index<Instances, Name>>) -> index<Instances, Name>
+type function CreateResult(name: type)
+	local instance = if name ~= types.unknown then Instances:readproperty(name) else nil
+	if instance then
+		return types.newfunction({ head = { Properties(instance) } }, { head = { instance } })
+	else
+		return types.newfunction({ head = { AnyProps } }, { head = { AnyInstance } })
+	end
+end
+
+type Create = <Name>(Name | keyof<Instances>) -> CreateResult<Name>
 
 return create :: Create
