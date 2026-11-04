@@ -1,5 +1,5 @@
-local typeof = game and typeof or require "../test/mock".typeof :: never
-local Instance = game and Instance or require "../test/mock".Instance :: never
+local typeof = Instance and typeof or require "../test/mock".typeof :: never
+local Instance = Instance or require "../test/mock".Instance :: never
 
 local defaults = require "./defaults"
 local apply = require "./apply"
@@ -52,67 +52,100 @@ local function create(class_or_instance: string|Instance, properties: { [unknown
         else constructor
 end
 
-type Instances = {
-	Folder: Folder,
-	BillboardGui: BillboardGui,
-	CanvasGroup: CanvasGroup,
-	Frame: Frame,
-	ImageButton: ImageButton,
-	ImageLabel: ImageLabel,
-	ScreenGui: ScreenGui,
-	ScrollingFrame: ScrollingFrame,
-	SurfaceGui: SurfaceGui,
-	TextBox: TextBox,
-	TextButton: TextButton,
-	TextLabel: TextLabel,
-	UIAspectRatioConstraint: UIAspectRatioConstraint,
-	UICorner: UICorner,
-	UIGradient: UIGradient,
-	UIGridLayout: UIGridLayout,
-	UIListLayout: UIListLayout,
+export type Instances = {
+    -- containers
+    Folder: Folder,
+    Configuration: Configuration,
+
+    -- layer collectors
+    ScreenGui: ScreenGui,
+    SurfaceGui: SurfaceGui,
+    BillboardGui: BillboardGui,
+
+    -- ui objects
+    Frame: Frame,
+    CanvasGroup: CanvasGroup,
+    ImageButton: ImageButton,
+    ImageLabel: ImageLabel,
+    ScrollingFrame: ScrollingFrame,
+    TextBox: TextBox,
+    TextButton: TextButton,
+    TextLabel: TextLabel,
+    VideoFrame: VideoFrame,
+    Path2D: Path2D,
+
+    -- ui components
+    UIAspectRatioConstraint: UIAspectRatioConstraint,
+    UICorner: UICorner,
+    UIGradient: UIGradient,
+    UISizeConstraint: UISizeConstraint,
+    UITextSizeConstraint: UITextSizeConstraint,
+    UIScale: UIScale,
+    UIPadding: UIPadding,
+    UIStroke: UIStroke,
+    UIFlexItem: UIFlexItem,
+    UIShadow: UIShadow,
+    UIDragDetector: UIDragDetector,
+
+    -- ui layouts
+    UIGridLayout: UIGridLayout,
+    UIListLayout: UIListLayout,
+    UIPageLayout: UIPageLayout,
+    UITableLayout: UITableLayout,
+
+    -- viewports / world ui
+    ViewportFrame: ViewportFrame,
+    Camera: Camera,
+    WorldModel: WorldModel,
+
+    -- styling
+    StyleSheet: StyleSheet,
+    StyleRule: StyleRule,
+    StyleDerive: StyleDerive,
+    StyleLink: StyleLink,
+    StyleQuery: StyleQuery,
+    -- interaction
+    ProximityPrompt: ProximityPrompt,
+
+    -- value objs
+    BoolValue: BoolValue,
+    IntValue: IntValue,
+    NumberValue: NumberValue,
+    StringValue: StringValue,
+    ObjectValue: ObjectValue,
+    Color3Value: Color3Value,
+    Vector3Value: Vector3Value,
+    CFrameValue: CFrameValue,
 }
 
-type AnyInstance = Instance
+export type function Properties(instance: type?)
+    local properties = types.newtable()
 
-type AnyProps = { [any]: any }
+    while instance do
+        for i, v in instance:properties() do
+            local connector = v.read and v.read.tag == "table" and v.read:readproperty(types.singleton("Connect"))
+            if connector then
+                local params = connector:parameters().head
+                if not params then continue end
+                local listener = params[2]
+                if not listener then continue end
+                properties:setproperty(i, types.optional(listener))
+            elseif v.write then
+                properties:setproperty(i, types.optional(types.unionof(
+                    v.write,
+                    types.newfunction({}, { head = { v.write } })
+                )))
+            end
+        end
 
-type function Properties(instance: type?)
-	local properties = types.newtable()
+        instance = instance:readparent()
+    end
 
-	while instance do
-		for i, v in instance:properties() do
-			local connector = v.read and v.read.tag == "table" and v.read:readproperty(types.singleton("Connect"))
-			if connector then
-				local params = connector:parameters().head
-				local listener = params and params[2]
-				if listener then
-					properties:setproperty(i, types.optional(listener))
-				end
-			elseif v.write then
-				properties:setproperty(
-					i,
-					types.optional(types.unionof(v.write, types.newfunction({}, { head = { v.write } })))
-				)
-			end
-		end
+    properties:setindexer(types.number, types.any)
 
-		instance = instance:readparent()
-	end
-
-	properties:setindexer(types.number, types.any)
-
-	return properties
+    return properties
 end
 
-type function CreateResult(name: type)
-	local instance = if name ~= types.unknown then Instances:readproperty(name) else nil
-	if instance then
-		return types.newfunction({ head = { Properties(instance) } }, { head = { instance } })
-	else
-		return types.newfunction({ head = { AnyProps } }, { head = { AnyInstance } })
-	end
-end
-
-type Create = <Name>(Name | keyof<Instances>) -> CreateResult<Name>
+type Create = <Name>(Name|keyof<Instances>|"") -> (Properties<index<Instances, Name>>) -> index<Instances, Name>
 
 return create :: Create

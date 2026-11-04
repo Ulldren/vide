@@ -1,4 +1,4 @@
-local version = { major = 0, minor = 4, patch = 0 }
+local version = { major = 0, minor = 4, patch = 1 }
 
 local root = require "./root"
 local branch = require "./branch"
@@ -27,19 +27,21 @@ export type Source<T> = source.Source<T>
 export type source<T> = Source<T>
 export type Context<T> = context.Context<T>
 export type context<T> = Context<T>
+export type Instances = create.Instances
+export type Properties<T> = create.Properties<T>
 
 local function step(dt: number)
-    if game then debug.profilebegin("VIDE STEP") end
+    if debug.profilebegin then debug.profilebegin("VIDE STEP") end
 
-    if game then debug.profilebegin("VIDE SPRING") end
+    if debug.profilebegin then debug.profilebegin("VIDE SPRING") end
     update_springs(dt)
-    if game then debug.profileend() end
+    if debug.profileend then debug.profileend() end
 
-    if game then debug.profilebegin("VIDE SCHEDULER") end
+    if debug.profilebegin then debug.profilebegin("VIDE SCHEDULER") end
     update_timeouts(dt)
-    if game then debug.profileend() end
+    if debug.profileend then debug.profileend() end
 
-    if game then debug.profileend() end
+    if debug.profileend then debug.profileend() end
 end
 
 local stepped = game and game:GetService("RunService").Heartbeat:Connect(function(dt: number)
@@ -110,7 +112,7 @@ setmetatable(vide :: any, {
 
     __newindex = function(_, index: unknown, value: unknown)
         if flags[index] == nil then
-            error(`{tostring(index)} is not a valid member of vide, 0`)
+            error(`{tostring(index)} is not a valid member of vide`, 0)
         else
             flags[index] = value
         end
