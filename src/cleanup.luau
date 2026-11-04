@@ -32,12 +32,13 @@ end
 
 type Destroyable = { destroy: (any) -> () } | { Destroy: (any) -> () }
 type Disconnectable = { disconnect: (any) -> () } | { Disconnect: (any) -> () }
+type Callback = () -> ()
 
-return cleanup ::
-    ( (callback: () -> ()) -> () ) &
-    ( (thread: thread) -> () ) &
-    ( (instance: Destroyable) -> () ) &
-    ( (connection: Disconnectable) -> () ) &
-    ( (instance: Instance) -> () ) &
-    ( (connection: RBXScriptConnection) -> () )
+return cleanup :: (Callback | thread | Destroyable | Disconnectable | Instance | RBXScriptConnection) -> ()
+    -- ( (callback: () -> ()) -> () ) &
+    -- ( (thread: thread) -> () ) &
+    -- ( (instance: Destroyable) -> () ) &
+    -- ( (connection: Disconnectable) -> () ) &
+    -- ( (instance: Instance) -> () ) &
+    -- ( (connection: RBXScriptConnection) -> () )
 
