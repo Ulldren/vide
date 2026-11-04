@@ -146,6 +146,10 @@ export type function Properties(instance: type?)
     return properties
 end
 
-type Create = <Name>(Name|keyof<Instances>|"") -> (Properties<index<Instances, Name>>) -> index<Instances, Name>
+type AnyInstance = Instance
+type AnyProps = { [any]: any }
+
+-- type Create = <Name>(Name|keyof<Instances>|"") -> (Properties<index<Instances, Name>>) -> index<Instances, Name>
+type Create = <Name>(Name|keyof<Instances>|"") -> (AnyProps) -> index<Instances, Name>
 
 return create :: Create
